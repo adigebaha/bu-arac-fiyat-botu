@@ -26,7 +26,6 @@ st.title("🚗 Araç Kiralama Fiyat Toplama Botu")
 st.markdown("Bu uygulama **Yolcu360** ve **Obilet** sitelerindeki güncel fiyatları seçtiğiniz lokasyona göre çeker.")
 
 # --- LOKASYON LİNKLERİ SÖZLÜĞÜ ---
-# DİKKAT: Boş olan ("") yerlere sitelerden aldığınız arama sonuç linklerini yapıştırmalısınız.
 LOKASYONLAR = {
     "Istanbul Havalimanı": {
         "Yolcu360": "https://yolcu360.com/arac-kiralama/search?a=30-65&p_d=2026-10-10&d_d=2026-10-11&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.274874,28.732136&pid=ChIJqZW8Cvb_n0ARBuUkyCzgDDg",
@@ -51,26 +50,47 @@ LOKASYONLAR = {
     "Yenibosna": {"Yolcu360": "", "Obilet": ""}
 }
 
-secilen_lokasyon = st.selectbox("📍 Veri Çekilecek İstasyonu Seçin:", list(LOKASYONLAR.keys()))
+# --- KULLANICI SEÇİMLERİ ---
+col1, col2 = st.columns(2)
+with col1:
+    secilen_broker = st.selectbox("🔌 Broker Seçimi:", ["Tümü", "Yolcu360", "Obilet"])
+with col2:
+    secilen_lokasyon = st.selectbox("📍 Veri Çekilecek İstasyonu Seçin:", list(LOKASYONLAR.keys()))
+
+# Sadece Greenmotion Getir Filtresi
+sadece_greenmotion = st.checkbox("💚 Sadece Greenmotion Araçlarını Getir", value=False)
 
 if st.button("▶️ Verileri Çek ve Excel Oluştur"):
-    urls = LOKASYONLAR[secilen_lokasyon]
+    all_urls = LOKASYONLAR[secilen_lokasyon]
     
-    if not urls["Yolcu360"] or not urls["Obilet"]:
-        st.error(f"⚠️ {secilen_lokasyon} için arama linkleri eksik! Lütfen koddaki LOKASYONLAR kısmına geçerli URL'leri yapıştırın.")
+    # Hangi sitelerin taranacağını belirle
+    siteler_to_scan = []
+    if secilen_broker == "Tümü":
+        siteler_to_scan = ["Yolcu360", "Obilet"]
     else:
-        with st.spinner(f"{secilen_lokasyon} için bot çalışıyor, lütfen bekleyin (Bu işlem birkaç dakika sürebilir)..."):
+        siteler_to_scan = [secilen_broker]
+
+    eksik_url_var = False
+    for site in siteler_to_scan:
+        if not all_urls[site]:
+            st.error(f"⚠️ {secilen_lokasyon} için {site} arama linki eksik!")
+            eksik_url_var = True
+
+    if not eksik_url_var:
+        with st.spinner(f"{secilen_lokasyon} için bot çalışıyor, lütfen bekleyin..."):
             live_data = []
             bot = None
             try:
                 bot = setup_bot()
                 bot.maximize_window()
 
-                for site_name, url in urls.items():
+                for site_name in siteler_to_scan:
+                    url = all_urls[site_name]
                     st.info(f"🌐 {site_name} taranıyor...")
                     bot.get(url)
                     time.sleep(5)
 
+                    # Sayfa aşağı kaydırma
                     last_height = bot.execute_script("return document.body.scrollHeight")
                     while True:
                         bot.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -87,6 +107,10 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                                 sirket_el = card.find_elements(By.XPATH, './/button[contains(@class,"review-island")]//img[@alt]')
                                 if not sirket_el: sirket_el = card.find_elements(By.XPATH, './/img[@alt]')
                                 sirket_text = sirket_el[0].get_attribute("alt").strip() if sirket_el else "Bilinmiyor"
+
+                                # Filtreleme: Eğer Sadece Greenmotion seçildiyse ve şirket adı eşleşmiyorsa atla
+                                if sadece_greenmotion and "greenmotion" not in sirket_text.lower():
+                                    continue
 
                                 model_el = card.find_elements(By.XPATH, ".//div[contains(@class,'text-dark-gray') and contains(@class,'text-lg') and contains(@class,'font-bold')]")
                                 model_text = model_el[0].get_attribute("textContent").strip() if model_el else "Bilinmiyor"
@@ -109,6 +133,10 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                                 sirket_el = card.find_elements(By.XPATH, './/img[contains(@class,"car-provider__logo")]')
                                 sirket_text = sirket_el[0].get_attribute("alt").strip() if sirket_el else "Bilinmiyor"
 
+                                # Filtreleme: Eğer Sadece Greenmotion seçildiyse ve şirket adı eşleşmiyorsa atla
+                                if sadece_greenmotion and "greenmotion" not in sirket_text.lower():
+                                    continue
+
                                 model_el = card.find_elements(By.XPATH, ".//div[contains(@class,'car-item__name')]")
                                 model_text = model_el[0].get_attribute("textContent").strip() if model_el else "Bilinmiyor"
 
@@ -127,7 +155,6 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                 st.success("✅ Veri çekme tamamlandı! Excel dosyası hazırlanıyor...")
 
                 if live_data:
-                    # Excel kolonlarına 'Lokasyon' sütununu da ekledik
                     df_live = pd.DataFrame(live_data, columns=["Broker", "Lokasyon", "Kiralama Şirketi", "Araç Modeli", "Araç Sınıfı", "Fiyat"])
 
                     output = io.BytesIO()
@@ -149,7 +176,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                         max_length = max((len(str(cell.value)) for cell in col if cell.value), default=0)
                         ws_live.column_dimensions[get_column_letter(col_idx)].width = max_length + 2
 
-                    # Greenmotion satırlarını yeşile boyama (Şirket adı artık 3. sütunda)
+                    # Greenmotion satırlarını yeşile boyama (3. sütun)
                     for row in ws_live.iter_rows(min_row=2, max_row=ws_live.max_row, min_col=1, max_col=ws_live.max_column):
                         if row[2].value and "greenmotion" in str(row[2].value).lower():
                             for cell in row:
@@ -159,7 +186,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                     wb_live.save(final_output)
                     final_output.seek(0)
 
-                    st.download_button(
+                    st.download_button( 
                         label=f"📥 {secilen_lokasyon} Raporunu İndir",
                         data=final_output,
                         file_name=f"{secilen_lokasyon}_Fiyat_Raporu.xlsx",
@@ -167,8 +194,8 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                     )
 
                     st.dataframe(df_live)
-                else:
-                    st.warning("⚠️ Veri bulunamadı.")
+                else: 
+                    st.warning("⚠️ Veri bulunamadı veya aranan kriterde araç yok.")
 
             except Exception as e:
                 st.error(f"❌ Hata oluştu: {e}")
