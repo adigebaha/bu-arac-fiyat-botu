@@ -9,18 +9,20 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
 import io
+import os
+from datetime import datetime, timedelta
 
 def setup_bot():
     # 1. Aşama: Chromium için sisteme uygun sürümdeki ChromeDriver'ı indir/bul
     driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
-    
-    # 2. Aşama: Bot korumasını (Cloudflare vb.) aşmak için undetected_chromedriver kullan
+
+    # 2. Aşama: Bot korumasını aşmak için undetected_chromedriver kullan
     options = uc.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    
-    # Sürüm uyuşmazlığını engellemek için manager'ın bulduğu uyumlu driver yolunu veriyoruz
+    options.add_argument('--window-size=1920,1080') # Masaüstü görünümü zorunlu
+
     driver = uc.Chrome(
         options=options,
         driver_executable_path=driver_path
@@ -31,11 +33,26 @@ st.set_page_config(page_title="Araç Kiralama Botu", page_icon="🚗", layout="w
 st.title("🚗 Araç Kiralama Fiyat Toplama Botu")
 st.markdown("Bu uygulama **Yolcu360** ve **Obilet** sitelerindeki güncel fiyatları seçtiğiniz lokasyona göre çeker.")
 
+# --- DİNAMİK TARİH HESAPLAMASI (Yarın Alış - 1 Günlük) ---
+bugun = datetime.now()
+alis_tarihi = bugun + timedelta(days=1)
+donus_tarihi = alis_tarihi + timedelta(days=1)
+
+# Yolcu360 formatı: YYYY-MM-DD
+y360_alis = alis_tarihi.strftime("%Y-%m-%d")
+y360_donus = donus_tarihi.strftime("%Y-%m-%d")
+
+# Obilet formatı: YYYYMMDD
+ob_alis = alis_tarihi.strftime("%Y%m%d")
+ob_donus = donus_tarihi.strftime("%Y%m%d")
+
+st.info(f"📅 **Arama Tarihleri:** Alış: {y360_alis} 10:00 | Dönüş: {y360_donus} 10:00 (1 Günlük Kiralama)")
+
 # --- LOKASYON LİNKLERİ SÖZLÜĞÜ ---
 LOKASYONLAR = {
     "Istanbul Havalimanı": {
-        "Yolcu360": "https://yolcu360.com/arac-kiralama/search?a=30-65&p_d=2026-10-10&d_d=2026-10-11&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.274874,28.732136&pid=ChIJqZW8Cvb_n0ARBuUkyCzgDDg",
-        "Obilet": "https://www.obilet.com/araclar/24-24/20261010_1000-20261011_1000"
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.274874,28.732136&pid=ChIJqZW8Cvb_n0ARBuUkyCzgDDg",
+        "Obilet": f"https://www.obilet.com/araclar/24-24/{ob_alis}_1000-{ob_donus}_1000"
     },
     "Adnan Menderes Havalimanı": {"Yolcu360": "", "Obilet": ""},
     "Ankara Çankaya": {"Yolcu360": "", "Obilet": ""},
@@ -63,13 +80,11 @@ with col1:
 with col2:
     secilen_lokasyon = st.selectbox("📍 Veri Çekilecek İstasyonu Seçin:", list(LOKASYONLAR.keys()))
 
-# Sadece Greenmotion Getir Filtresi
 sadece_greenmotion = st.checkbox("💚 Sadece Greenmotion Araçlarını Getir", value=False)
 
 if st.button("▶️ Verileri Çek ve Excel Oluştur"):
     all_urls = LOKASYONLAR[secilen_lokasyon]
 
-    # Hangi sitelerin taranacağını belirle
     siteler_to_scan = []
     if secilen_broker == "Tümü":
         siteler_to_scan = ["Yolcu360", "Obilet"]
@@ -94,11 +109,11 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                     url = all_urls[site_name]
                     st.info(f"🌐 {site_name} taranıyor...")
                     bot.get(url)
-                    time.sleep(5)
+                    time.sleep(6) # Sayfanın ilk yüklenmesi için bekleme
 
                     # Sayfa aşağı kaydırma
                     last_height = bot.execute_script("return document.body.scrollHeight")
-                    while True:
+                    for _ in range(3): # Sonsuz döngü yerine garantili deneme yapalım
                         bot.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                         time.sleep(3)
                         new_height = bot.execute_script("return document.body.scrollHeight")
@@ -108,13 +123,19 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
 
                     if site_name == "Yolcu360":
                         car_cards = bot.find_elements(By.XPATH, "//div[contains(@class,'car-card')]")
+                        
+                        # --- HATA AYIKLAMA İÇİN EKRAN GÖRÜNTÜSÜ ---
+                        if len(car_cards) == 0:
+                            bot.save_screenshot(f"{site_name}_debug.png")
+                            st.warning(f"⚠️ {site_name} üzerinde araç bulunamadı. Sitedeki anlık görünüm:")
+                            st.image(f"{site_name}_debug.png")
+                            
                         for card in car_cards:
                             try:
                                 sirket_el = card.find_elements(By.XPATH, './/button[contains(@class,"review-island")]//img[@alt]')
                                 if not sirket_el: sirket_el = card.find_elements(By.XPATH, './/img[@alt]')
                                 sirket_text = sirket_el[0].get_attribute("alt").strip() if sirket_el else "Bilinmiyor"
 
-                                # Filtreleme: Eğer Sadece Greenmotion seçildiyse ve şirket adı eşleşmiyorsa atla
                                 if sadece_greenmotion and "greenmotion" not in sirket_text.lower():
                                     continue
 
@@ -134,12 +155,18 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
 
                     elif site_name == "Obilet":
                         car_cards = bot.find_elements(By.XPATH, "//div[contains(@class,'car-item')]")
+                        
+                        # --- HATA AYIKLAMA İÇİN EKRAN GÖRÜNTÜSÜ ---
+                        if len(car_cards) == 0:
+                            bot.save_screenshot(f"{site_name}_debug.png")
+                            st.warning(f"⚠️ {site_name} üzerinde araç bulunamadı. Sitedeki anlık görünüm:")
+                            st.image(f"{site_name}_debug.png")
+
                         for card in car_cards:
                             try:
                                 sirket_el = card.find_elements(By.XPATH, './/img[contains(@class,"car-provider__logo")]')
                                 sirket_text = sirket_el[0].get_attribute("alt").strip() if sirket_el else "Bilinmiyor"
 
-                                # Filtreleme: Eğer Sadece Greenmotion seçildiyse ve şirket adı eşleşmiyorsa atla
                                 if sadece_greenmotion and "greenmotion" not in sirket_text.lower():
                                     continue
 
@@ -182,7 +209,6 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                         max_length = max((len(str(cell.value)) for cell in col if cell.value), default=0)
                         ws_live.column_dimensions[get_column_letter(col_idx)].width = max_length + 2
 
-                    # Greenmotion satırlarını yeşile boyama (3. sütun)
                     for row in ws_live.iter_rows(min_row=2, max_row=ws_live.max_row, min_col=1, max_col=ws_live.max_column):
                         if row[2].value and "greenmotion" in str(row[2].value).lower():
                             for cell in row:
