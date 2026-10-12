@@ -4,3 +4,4 @@ undetected-chromedriver
 pandas
 openpyxl
 setuptools
+webdriver-manager
