@@ -1,7 +1,5 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 import time
 import pandas as pd
@@ -11,14 +9,12 @@ from openpyxl.utils import get_column_letter
 import io
 
 def setup_bot():
-    options = Options()
+    options = uc.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.binary_location = '/usr/bin/chromium'
-    service = Service('/usr/bin/chromedriver')
-    driver = webdriver.Chrome(service=service, options=options)
+    # Streamlit Cloud'da çalışması için bazen ek ayarlar gerekebilir, şimdilik standart undetected ayarları
+    driver = uc.Chrome(options=options)
     return driver
 
 st.set_page_config(page_title="Araç Kiralama Botu", page_icon="🚗", layout="wide")
@@ -62,7 +58,7 @@ sadece_greenmotion = st.checkbox("💚 Sadece Greenmotion Araçlarını Getir", 
 
 if st.button("▶️ Verileri Çek ve Excel Oluştur"):
     all_urls = LOKASYONLAR[secilen_lokasyon]
-    
+
     # Hangi sitelerin taranacağını belirle
     siteler_to_scan = []
     if secilen_broker == "Tümü":
@@ -77,7 +73,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
             eksik_url_var = True
 
     if not eksik_url_var:
-        with st.spinner(f"{secilen_lokasyon} için bot çalışıyor, lütfen bekleyin..."):
+        with st.spinner(f"{secilen_lokasyon} için bot çalışıyor (Bu işlem 1-2 dakika sürebilir)..."):
             live_data = []
             bot = None
             try:
@@ -152,7 +148,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                                     live_data.append([site_name, secilen_lokasyon, sirket_text, model_text, sinif_text, fiyat_text.replace('\n', ' ')])
                             except Exception: continue
 
-                st.success("✅ Veri çekme tamamlandı! Excel dosyası hazırlanıyor...")
+                st.success(f"✅ Veri çekme tamamlandı! ({len(live_data)} araç bulundu) Excel dosyası hazırlanıyor...")
 
                 if live_data:
                     df_live = pd.DataFrame(live_data, columns=["Broker", "Lokasyon", "Kiralama Şirketi", "Araç Modeli", "Araç Sınıfı", "Fiyat"])
@@ -186,7 +182,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                     wb_live.save(final_output)
                     final_output.seek(0)
 
-                    st.download_button( 
+                    st.download_button(
                         label=f"📥 {secilen_lokasyon} Raporunu İndir",
                         data=final_output,
                         file_name=f"{secilen_lokasyon}_Fiyat_Raporu.xlsx",
@@ -194,7 +190,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                     )
 
                     st.dataframe(df_live)
-                else: 
+                else:
                     st.warning("⚠️ Veri bulunamadı veya aranan kriterde araç yok.")
 
             except Exception as e:
