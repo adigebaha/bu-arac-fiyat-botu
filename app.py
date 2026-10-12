@@ -1,5 +1,8 @@
 import streamlit as st
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.common.by import By
 import time
 import pandas as pd
@@ -9,12 +12,15 @@ from openpyxl.utils import get_column_letter
 import io
 
 def setup_bot():
-    options = uc.ChromeOptions()
-    options.add_argument('--headless')
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless=new')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    # Streamlit Cloud'da çalışması için bazen ek ayarlar gerekebilir, şimdilik standart undetected ayarları
-    driver = uc.Chrome(options=options)
+    options.add_argument('--disable-gpu')
+
+    # Webdriver Manager ile Chromium'a uygun sürümü otomatik indir ve kullan
+    service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+    driver = webdriver.Chrome(service=service, options=options)
     return driver
 
 st.set_page_config(page_title="Araç Kiralama Botu", page_icon="🚗", layout="wide")
