@@ -1,6 +1,5 @@
 import streamlit as st
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+import undetected_chromedriver as uc
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.common.by import By
@@ -12,15 +11,20 @@ from openpyxl.utils import get_column_letter
 import io
 
 def setup_bot():
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless=new')
+    # 1. Aşama: Chromium için sisteme uygun sürümdeki ChromeDriver'ı indir/bul
+    driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
+    
+    # 2. Aşama: Bot korumasını (Cloudflare vb.) aşmak için undetected_chromedriver kullan
+    options = uc.ChromeOptions()
+    options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-
-    # Webdriver Manager ile Chromium'a uygun sürümü otomatik indir ve kullan
-    service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
-    driver = webdriver.Chrome(service=service, options=options)
+    
+    # Sürüm uyuşmazlığını engellemek için manager'ın bulduğu uyumlu driver yolunu veriyoruz
+    driver = uc.Chrome(
+        options=options,
+        driver_executable_path=driver_path
+    )
     return driver
 
 st.set_page_config(page_title="Araç Kiralama Botu", page_icon="🚗", layout="wide")
