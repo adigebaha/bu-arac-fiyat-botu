@@ -49,28 +49,108 @@ ob_donus = donus_tarihi.strftime("%Y%m%d")
 st.info(f"📅 **Arama Tarihleri:** Alış: {y360_alis} 10:00 | Dönüş: {y360_donus} 10:00 (1 Günlük Kiralama)")
 
 # --- LOKASYON LİNKLERİ SÖZLÜĞÜ ---
+# The URLs provided by the user have been added here with dynamic dates
 LOKASYONLAR = {
-    "Istanbul Havalimanı": {
+    "Adnan Menderes Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=38.2924,27.157&pid=ChIJNzAtBD7guxQRSGSP1dn9i6A",
+        "Obilet": f"https://www.obilet.com/araclar/26-26/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Ankara Esenboğa Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=40.128101,32.995098&pid=ChIJqYLJ0NoPgkAR1nZct7rSPvE",
+        "Obilet": f"https://www.obilet.com/araclar/5-5/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Ankara Çankaya": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=39.91604639014475,32.86056484094785&pid=ChIJYXI1n61F0xQRHW_97pHGAUs",
+        "Obilet": f"https://www.obilet.com/araclar/170-170/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Antalya": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=36.8968908,30.7133233&pid=ChIJwa2t3a6awxQRMy7j-XOfxpU",
+        "Obilet": f"https://www.obilet.com/araclar/97-97/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Antalya Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=36.9086961,30.7981855&pid=ChIJnXxhjXeEwxQR-uhI2_zcfME",
+        "Obilet": f"https://www.obilet.com/araclar/6-6/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Ataşehir Şehir": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=40.9874178,29.1216176&pid=ChIJl1E_Af_FyhQRuLjXUZ4SnLU",
+        "Obilet": f"https://www.obilet.com/araclar/108-108/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Bodrum Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.249314,27.66401&pid=ChIJHdQmLhf2vhQR0mNL2LRpO5g",
+        "Obilet": f"https://www.obilet.com/araclar/38-38/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Bursa Şehir": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=40.20951,28.99877&pid=ChIJlVbU2IIVyhQRkjOX_FUFoGE",
+        "Obilet": f"https://www.obilet.com/araclar/159-159/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Dalaman Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=36.7113798,28.78728&pid=ChIJb0WDj11xwBQR2uT6br5G8so",
+        "Obilet": f"https://www.obilet.com/araclar/37-37/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Denizli Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.7855987549,29.7012996674&pid=ChIJYwlVfnDuxhQRuC_s3Fek-H4",
+        "Obilet": f"https://www.obilet.com/araclar/13-13/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Denizli Pamukkale": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.825035,29.668323&pid=ChIJuy3OsJXxxhQR8XfgpGER_gY",
+        "Obilet": f"https://www.obilet.com/araclar/566-566/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Diyarbakir Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.9005695,40.1843177&pid=ChIJlxxcC-IhdUARgPQTlDRY5Xk",
+        "Obilet": f"https://www.obilet.com/araclar/14-14/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Erzurum Şehir": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=39.9054993,41.2658236&pid=ChIJ8ZTrpShfbkARhvu7atU_DgE",
+        "Obilet": f"https://www.obilet.com/araclar/17-17/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Kartal": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=40.918290317259526,29.22049576981109&pid=ChIJFemS3fHEyhQRzG2y130a-Xs",
+        "Obilet": f"https://www.obilet.com/araclar/291-291/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Kayseri Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=38.770401,35.495399&pid=ChIJa-jqttkTKxUR-fBhfCtIs-Q",
+        "Obilet": f"https://www.obilet.com/araclar/30-30/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Konya Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.985049,32.5768539&pid=ChIJzest61OS0BQRX7PPGoRpL9k",
+        "Obilet": f"https://www.obilet.com/araclar/33-33/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Mardin Şehir": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.312903,40.733951&pid=ChIJ_QqvisOICkARQfiwR_wg30c",
+        "Obilet": f"https://www.obilet.com/araclar/348-348/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Mersin Çukurova Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=36.904281377658606,35.06860502418453&pid=ChIJ_ero9wLXJxURKtd7iOH9PDw",
+        "Obilet": f"https://www.obilet.com/araclar/1-1/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Muğla Menteşe Şehir": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=37.2351984,28.4396756&pid=ChIJ57Ojdt5uvxQR0kbsI52iXuw",
+        "Obilet": f"https://www.obilet.com/araclar/354-354/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Sabiha Gökçen Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=40.898602,29.3092&pid=ChIJU6Ek9MvbyhQRdNqYgE3K76w",
+        "Obilet": f"https://www.obilet.com/araclar/25-25/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Samsun Havalimanı": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.253988,36.567546&pid=ChIJvavQAmgLiEAReCwMRRr2reA",
+        "Obilet": f"https://www.obilet.com/araclar/44-44/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Tokat Şehir": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=40.32472,36.39056&pid=ChIJJayOBzPHfUARchRWZrMdyNs",
+        "Obilet": f"https://www.obilet.com/araclar/455-455/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Umraniye": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.0182327,29.1274334&pid=ChIJuZf3LSvJyhQRSsAgSZNI_6s",
+        "Obilet": f"https://www.obilet.com/araclar/470-470/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "Yenibosna": {
+        "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.0151634,28.8247088&pid=ChIJJV77bo-kyhQRfO6twmmiKGQ",
+        "Obilet": f"https://www.obilet.com/araclar/480-480/{ob_alis}_1000-{ob_donus}_1000"
+    },
+    "İstanbul Havalimanı": {
         "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=41.274874,28.732136&pid=ChIJqZW8Cvb_n0ARBuUkyCzgDDg",
         "Obilet": f"https://www.obilet.com/araclar/24-24/{ob_alis}_1000-{ob_donus}_1000"
-    },
-    "Adnan Menderes Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Ankara Çankaya": {"Yolcu360": "", "Obilet": ""},
-    "Ankara Esenboğa": {"Yolcu360": "", "Obilet": ""},
-    "Ankara Esenboğa Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Antalya": {"Yolcu360": "", "Obilet": ""},
-    "Ataşehir": {"Yolcu360": "", "Obilet": ""},
-    "Denizli Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Denizli Pamukkale": {"Yolcu360": "", "Obilet": ""},
-    "Diyarbakir Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Erzurum Şehir": {"Yolcu360": "", "Obilet": ""},
-    "Kartal": {"Yolcu360": "", "Obilet": ""},
-    "Konya Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Sabiha Gökçen Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Samsun Havalimanı": {"Yolcu360": "", "Obilet": ""},
-    "Tokat Şehir": {"Yolcu360": "", "Obilet": ""},
-    "Ümraniye": {"Yolcu360": "", "Obilet": ""},
-    "Yenibosna": {"Yolcu360": "", "Obilet": ""}
+    }
 }
 
 # --- KULLANICI SEÇİMLERİ ---
@@ -123,13 +203,13 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
 
                     if site_name == "Yolcu360":
                         car_cards = bot.find_elements(By.XPATH, "//div[contains(@class,'car-card')]")
-                        
+
                         # --- HATA AYIKLAMA İÇİN EKRAN GÖRÜNTÜSÜ ---
                         if len(car_cards) == 0:
                             bot.save_screenshot(f"{site_name}_debug.png")
                             st.warning(f"⚠️ {site_name} üzerinde araç bulunamadı. Sitedeki anlık görünüm:")
                             st.image(f"{site_name}_debug.png")
-                            
+
                         for card in car_cards:
                             try:
                                 sirket_el = card.find_elements(By.XPATH, './/button[contains(@class,"review-island")]//img[@alt]')
@@ -155,7 +235,7 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
 
                     elif site_name == "Obilet":
                         car_cards = bot.find_elements(By.XPATH, "//div[contains(@class,'car-item')]")
-                        
+
                         # --- HATA AYIKLAMA İÇİN EKRAN GÖRÜNTÜSÜ ---
                         if len(car_cards) == 0:
                             bot.save_screenshot(f"{site_name}_debug.png")
