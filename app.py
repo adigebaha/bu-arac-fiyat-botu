@@ -3,31 +3,47 @@ import undetected_chromedriver as uc
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
 import pandas as pd
 import openpyxl
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
 import io
-import os
 from datetime import datetime, timedelta
 
 def setup_bot():
-    driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
     options = uc.ChromeOptions()
-    options.add_argument('--headless')
+    # Yeni ve daha stabil headless modu
+    options.add_argument('--headless=new')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    
+    # Sunucu ortamlarında çökmeleri önlemek için ekstra argümanlar
+    options.add_argument('--disable-gpu')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-software-rasterizer')
+    
+    # RAM tasarrufu ve sayfa yükleme hızını artırmak için resimleri devredışı bırakın
+    options.add_argument('--blink-settings=imagesEnabled=false')
+    
     options.add_argument('--window-size=1920,1080')
     options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')
     options.add_argument('--lang=tr-TR')
     
-    driver = uc.Chrome(
-        options=options,
-        driver_executable_path=driver_path
-    )
+    # Sayfanın tamamen yüklenmesini beklemek yerine (trackerlar vb.), interaktif olduğu an veriyi al
+    options.page_load_strategy = 'eager'
+    
+    try:
+        # undetected_chromedriver'ın kendi driver'ını indirmesine izin verin
+        driver = uc.Chrome(options=options)
+    except Exception:
+        # Hata olursa webdriver_manager ile alternatif deneme yap
+        driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
+        driver = uc.Chrome(options=options, driver_executable_path=driver_path)
+    
+    # Sonsuza kadar beklemesini önlemek için sayfa yükleme zaman aşımı belirleyin
+    driver.set_page_load_timeout(60)
+    
     return driver
 
 st.set_page_config(page_title="Araç Kiralama Botu", page_icon="🚗", layout="wide")
@@ -182,7 +198,13 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                 for site_name in siteler_to_scan:
                     url = all_urls[site_name]
                     st.info(f"🌐 {site_name} taranıyor...")
-                    bot.get(url)
+                    
+                    # Siteye bağlanırken timeout vb. olursa programın çökmemesi için try bloğu
+                    try:
+                        bot.get(url)
+                    except Exception as e:
+                        st.warning(f"⚠️ {site_name} yüklenirken zaman aşımı oldu. Taranabilen kadarıyla devam edilecek.")
+                    
                     time.sleep(8) # Daha güvenli yüklenme süresi
                     
                     # Dinamik sayfa aşağı kaydırma
@@ -196,10 +218,8 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                         last_height = new_height
 
                     if site_name == "Yolcu360":
-                        # CSS ve XPath seçicilerini daha esnek yapalım
                         car_cards = bot.find_elements(By.XPATH, "//div[contains(@class,'car-card') or contains(@class,'card-item') or contains(@class,'car-item')]")
                         if len(car_cards) == 0:
-                            # Yedek seçici alternatifi
                             car_cards = bot.find_elements(By.CSS_SELECTOR, "div[class*='car-card'], div[class*='card-item']")
 
                         if len(car_cards) == 0:
