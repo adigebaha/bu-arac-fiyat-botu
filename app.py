@@ -9,58 +9,58 @@ import openpyxl
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
 import io
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 def setup_bot():
     options = uc.ChromeOptions()
-    # Yeni ve daha stabil headless modu
     options.add_argument('--headless=new')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    
-    # Sunucu ortamlarında çökmeleri önlemek için ekstra argümanlar
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-software-rasterizer')
-    
-    # RAM tasarrufu ve sayfa yükleme hızını artırmak için resimleri devredışı bırakın
     options.add_argument('--blink-settings=imagesEnabled=false')
-    
     options.add_argument('--window-size=1920,1080')
     options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36')
     options.add_argument('--lang=tr-TR')
-    
-    # Sayfanın tamamen yüklenmesini beklemek yerine (trackerlar vb.), interaktif olduğu an veriyi al
     options.page_load_strategy = 'eager'
     
     try:
-        # undetected_chromedriver'ın kendi driver'ını indirmesine izin verin
         driver = uc.Chrome(options=options)
     except Exception:
-        # Hata olursa webdriver_manager ile alternatif deneme yap
         driver_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
         driver = uc.Chrome(options=options, driver_executable_path=driver_path)
     
-    # Sonsuza kadar beklemesini önlemek için sayfa yükleme zaman aşımı belirleyin
     driver.set_page_load_timeout(60)
-    
     return driver
 
 st.set_page_config(page_title="Araç Kiralama Botu", page_icon="🚗", layout="wide")
 st.title("🚗 Araç Kiralama Fiyat Toplama Botu")
 st.markdown("Bu uygulama **Yolcu360** ve **Obilet** sitelerindeki güncel fiyatları seçtiğiniz lokasyona göre çeker.")
 
-bugun = datetime.now()
-alis_tarihi = bugun + timedelta(days=1)
-donus_tarihi = alis_tarihi + timedelta(days=1)
+# --- TAKVİM (TARİH SEÇİMİ) ALANI ---
+col_d1, col_d2 = st.columns(2)
+with col_d1:
+    alis_tarihi = st.date_input("📅 Alış Tarihi Seçiniz", value=date.today() + timedelta(days=1))
+with col_d2:
+    donus_tarihi = st.date_input("📅 Dönüş Tarihi Seçiniz", value=alis_tarihi + timedelta(days=1))
 
+# Tarih mantık kontrolü
+if donus_tarihi <= alis_tarihi:
+    st.error("⚠️ Dönüş tarihi, alış tarihinden sonra olmalıdır! Lütfen tarihleri düzeltin.")
+    st.stop() # Kullanıcı tarihi düzeltmeden alt satırlara geçmeyi ve arama yapmayı durdurur
+
+gun_farki = (donus_tarihi - alis_tarihi).days
+
+# Tarihleri sitelerin link formatlarına uygun hale getirme
 y360_alis = alis_tarihi.strftime("%Y-%m-%d")
 y360_donus = donus_tarihi.strftime("%Y-%m-%d")
 ob_alis = alis_tarihi.strftime("%Y%m%d")
 ob_donus = donus_tarihi.strftime("%Y%m%d")
 
-st.info(f"📅 **Arama Tarihleri:** Alış: {y360_alis} 10:00 | Dönüş: {y360_donus} 10:00 (1 Günlük Kiralama)")
+st.info(f"📅 **Arama Tarihleri:** Alış: {y360_alis} 10:00 | Dönüş: {y360_donus} 10:00 ({gun_farki} Günlük Kiralama)")
 
+# URL sözlüğünü seçilen tarihlere göre dinamik oluşturuyoruz
 LOKASYONLAR = {
     "Adnan Menderes Havalimanı": {
         "Yolcu360": f"https://yolcu360.com/arac-kiralama/search?a=30-65&p_d={y360_alis}&d_d={y360_donus}&p_t=10:00&d_t=10:00&sb=recommended&p_p=38.2924,27.157&pid=ChIJNzAtBD7guxQRSGSP1dn9i6A",
@@ -199,15 +199,13 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
                     url = all_urls[site_name]
                     st.info(f"🌐 {site_name} taranıyor...")
                     
-                    # Siteye bağlanırken timeout vb. olursa programın çökmemesi için try bloğu
                     try:
                         bot.get(url)
-                    except Exception as e:
+                    except Exception:
                         st.warning(f"⚠️ {site_name} yüklenirken zaman aşımı oldu. Taranabilen kadarıyla devam edilecek.")
                     
-                    time.sleep(8) # Daha güvenli yüklenme süresi
+                    time.sleep(8)
                     
-                    # Dinamik sayfa aşağı kaydırma
                     last_height = bot.execute_script("return document.body.scrollHeight")
                     for _ in range(4):
                         bot.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -328,3 +326,22 @@ if st.button("▶️ Verileri Çek ve Excel Oluştur"):
             finally:
                 if bot:
                     bot.quit()
+
+# --- SAĞ ALT KÖŞEYE YAZI EKLEME (CSS İLE) ---
+footer_html = """
+<style>
+.footer {
+    position: fixed;
+    bottom: 10px;
+    right: 15px;
+    font-size: 12px;
+    color: #888888;
+    z-index: 9999;
+}
+</style>
+<div class="footer">made by: Bahadır UYSAL</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)
+```<br>
+
+<br>
